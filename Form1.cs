@@ -14,6 +14,7 @@ namespace ImageTyper
         private static IntPtr _scan;
         private static BitmapData _bmpdata;
         private bool bCustom = false;
+        private Random _rand;
         
         internal struct Kolor
         {
@@ -26,7 +27,8 @@ namespace ImageTyper
         {
             InitializeComponent();
             _bmp = new Bitmap(512, 512);
-            pictureBox1.Image = _bmp;     
+            pictureBox1.Image = _bmp;
+            _rand = new Random();
         }
         #region CommandWorker
         private void textBox1_KeyDown(object sender, KeyEventArgs e)
@@ -93,6 +95,45 @@ namespace ImageTyper
                     }
                 }
                     return;
+            }
+            if (com[0] == "generatenoise" || com[0] == "generate_noise" && parameters.Length == 2)
+            {
+                GenerateNoise(b,parameters[0], parameters[1]);
+                return;
+            }
+        }
+
+        internal void GenerateNoise(byte[] b, string v1, string v2)
+        {
+            int a1 = int.Parse(v1); //size
+            int a2 = int.Parse(v2); //color
+            for(int i = 0; i<b.Length-4; i+=3 *a1)
+            {
+                byte red = (byte)_rand.Next(0, 255);
+                byte green = (byte)_rand.Next(0, 255);
+                byte blue = (byte)_rand.Next(0, 255);
+                if(a2 > 0)
+                {
+                    for (int ii = i; ii < a1 * 3 + i -3; ii += 3)
+                    {
+                        try
+                        {
+                            b[ii + 2] = red;
+                            b[ii + 1] = green;
+                            b[ii] = blue;
+                        }
+                        catch
+                        {
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    b[i] = red;
+                    b[i + 1] = red;
+                    b[i + 2] = red;
+                }
             }
         }
 
