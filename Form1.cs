@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ImageTyper
@@ -19,12 +13,20 @@ namespace ImageTyper
         private static Bitmap _bmp;
         private static IntPtr _scan;
         private static BitmapData _bmpdata;
+        private bool bCustom = false;
+        
+        internal struct Kolor
+        {
+            public static byte R = 0xFF;
+            public static byte G = 0xFF;
+            public static byte B = 0xFF;
+        }
 
         public Form1()
         {
             InitializeComponent();
             _bmp = new Bitmap(512, 512);
-            pictureBox1.Image = _bmp;
+            pictureBox1.Image = _bmp;     
         }
         #region CommandWorker
         private void textBox1_KeyDown(object sender, KeyEventArgs e)
@@ -59,6 +61,7 @@ namespace ImageTyper
 
         internal void Process(byte[] b)
         {
+            bCustom = false;
             string[] com = _command.ToLower().Split('(');
             string[] parameters = null;
             if(com.Length != 1)
@@ -73,7 +76,31 @@ namespace ImageTyper
                 DrawShape(b, parameters[0], parameters[1], parameters[2], parameters[3]);
                 return;
             }
+            if (com[0] == "color" || com[0] == "colour" && parameters.Length == 3)
+            {
+                SetColor(parameters[0], parameters[1], parameters[2]);
+                return;
+            }
+            if (com[0] == "load" || com[0] == "loadfile")
+            {
+                using (OpenFileDialog ofd = new OpenFileDialog())
+                {
+                    if(ofd.ShowDialog() == DialogResult.OK)
+                    {
+                        bCustom = true;
+                        Image img = Image.FromFile(ofd.FileName);
+                        pictureBox1.Image = img;
+                    }
+                }
+                    return;
+            }
+        }
 
+        internal void SetColor(string v1, string v2, string v3)
+        {
+            Kolor.B = byte.Parse(v1);
+            Kolor.G = byte.Parse(v2);
+            Kolor.R = byte.Parse(v3);
         }
 
         internal void DrawShape(byte[] b, string xx, string yy, string height, string width)
@@ -93,9 +120,9 @@ namespace ImageTyper
                     i = GetPixelLocation(x, y + locY);
                     locX = 0;
                 }
-                b[i] = 0xFF;
-                b[i + 1] = 0xFF;
-                b[i + 2] = 0xFF;
+                b[i] = Kolor.R;
+                b[i + 1] = Kolor.G;
+                b[i + 2] = Kolor.B;
                 locX++;
             }
         }
@@ -123,9 +150,13 @@ namespace ImageTyper
 
         internal void UpdateImage(byte[] b)
         {
-            Marshal.Copy(b, 0, _scan, b.Length);
-            _bmp.UnlockBits(_bmpdata);
-            pictureBox1.Image = _bmp;
+            if (!bCustom)
+            {
+                Marshal.Copy(b, 0, _scan, b.Length);
+                _bmp.UnlockBits(_bmpdata);
+                pictureBox1.Image = _bmp;
+            }
+            else return;
         }
 
         //internal Func<int, int> GetPixelLocation = (int x, int y) => return (y * _bmpdata.Stride + x*3);
