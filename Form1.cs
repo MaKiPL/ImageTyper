@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -8,7 +9,8 @@ namespace ImageTyper
 {
     public partial class Form1 : Form
     {
-        private static string _lastCommand;
+        private static List<String> _lastCommand;
+        private byte _commandSelect = 0;
         private static string _command;
         private static Bitmap _bmp;
         private static IntPtr _scan;
@@ -26,6 +28,7 @@ namespace ImageTyper
         public Form1()
         {
             InitializeComponent();
+            _lastCommand = new List<string>();
             _bmp = new Bitmap(512, 512);
             pictureBox1.Image = _bmp;
             _rand = new Random();
@@ -40,16 +43,39 @@ namespace ImageTyper
                 TransferCommand(textBox1.Text);
                 textBox1.Clear();
             }
-            if(e.KeyCode == Keys.Up)
-                if (!string.IsNullOrWhiteSpace(_lastCommand))
-                    textBox1.Text = _lastCommand;
+            if (_lastCommand.Count != 0)
+            {
+                if (e.KeyCode == Keys.Up)
+                {
+                    if (!string.IsNullOrWhiteSpace(_lastCommand[0]))
+                    {
+                        /*if(_commandSelect == _lastCommand.Count - 1)
+                        {
+                            textBox1.Text = _lastCommand[_commandSelect];
+                            _commandSelect--;
+                        }*/
+                        textBox1.Text = _lastCommand[_commandSelect];
+                        _commandSelect = (byte)MathExtended.ClampUnsigned(--_commandSelect, _lastCommand.Count - 1);
+                        
+                    }
+                }
+                if (e.KeyCode == Keys.Down)
+                {
+                    if (!string.IsNullOrWhiteSpace(_lastCommand[0]))
+                    {
+                        _commandSelect = (byte)MathExtended.ClampUnsigned(++_commandSelect, _lastCommand.Count - 1);
+                        textBox1.Text = _lastCommand[_commandSelect];
+                    }
+                }
+            }
         }
 
         private void TransferCommand(string command)
         {
             richTextBox1.AppendText(">" + command + "\n");
             _command = command;
-            _lastCommand = _command;
+            _lastCommand.Add(_command);
+            _commandSelect = (byte)Math.Abs(_lastCommand.Count-1);
             PrepareCommands();
         }
 
@@ -100,6 +126,19 @@ namespace ImageTyper
             {
                 GenerateNoise(b,parameters[0], parameters[1]);
                 return;
+            }
+            if (com[0] == "e" || com[0] == "ex" && parameters.Length == 1)
+            {
+                TestEffect(b, parameters[0]);
+                return;
+            }
+        }
+
+        internal void TestEffect(byte[] b, string v)
+        {
+            for (int i = 0; i < b.Length - 4; i+=3)
+            {
+                      
             }
         }
 
@@ -172,6 +211,14 @@ namespace ImageTyper
         {
             public static int Clamp(int value, int maxValue)
             {
+                if (value > maxValue)
+                    return maxValue;
+                else return value;
+            }
+            public static int ClampUnsigned(int value, int maxValue)
+            {
+                if (value <= 0)
+                    return 0;
                 if (value > maxValue)
                     return maxValue;
                 else return value;
