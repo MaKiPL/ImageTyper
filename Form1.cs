@@ -129,16 +129,42 @@ namespace ImageTyper
             }
             if (com[0] == "e" || com[0] == "ex" && parameters.Length == 1)
             {
-                TestEffect(b, parameters[0]);
+                TestEffect(b, parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5]);
                 return;
             }
         }
 
-        internal void TestEffect(byte[] b, string v)
+        private void TestEffect(byte[] b, string v1, string v2, string v3, string v4, string v5, string v6)
         {
-            for (int i = 0; i < b.Length - 4; i+=3)
+            int pass = int.Parse(v6);
+            if (pass > 3)
+                pass = 3;
+            if (pass < 0)
+                pass = 1;
+            int x = int.Parse(v1) & 511;
+            int y = int.Parse(v2) & 511;
+            int h = Math.Abs(MathExtended.Clamp(int.Parse(v3), 511 - y));
+            int w = Math.Abs(MathExtended.Clamp(int.Parse(v4), 511 - x));
+            int start = GetPixelLocation(x, y);
+            int end = GetPixelLocation(x + w, y + h);
+            int locY = 0, locX = 0;
+            int tolerance = int.Parse(v5);
+            byte buffer = MathExtended.MostRepetativeByte(b, pass);
+            for (int i = start; i < end; i += 3)
             {
-                      
+                if (locX >= w)
+                {
+                    locY++;
+                    i = GetPixelLocation(x, y + locY);
+                    locX = 0;
+                }
+                if(pass == 3)
+                    b[i] = (byte)MathExtended.ClampUnsigned(_rand.Next(buffer - tolerance, buffer + tolerance),255);
+                if(pass == 2 || pass == 1)
+                    b[i + 1] = (byte)MathExtended.ClampUnsigned(_rand.Next(buffer - tolerance, buffer + tolerance), 255);
+                if(pass == 1)
+                    b[i + 2] = (byte)MathExtended.ClampUnsigned(_rand.Next(buffer - tolerance, buffer + tolerance), 255);
+                locX++;
             }
         }
 
@@ -178,9 +204,9 @@ namespace ImageTyper
 
         internal void SetColor(string v1, string v2, string v3)
         {
-            Kolor.B = byte.Parse(v1);
-            Kolor.G = byte.Parse(v2);
-            Kolor.R = byte.Parse(v3);
+            Kolor.B = (byte)(MathExtended.Clamp(int.Parse(v1),255));
+            Kolor.G = (byte)(MathExtended.Clamp(int.Parse(v2), 255));
+            Kolor.R = (byte)(MathExtended.Clamp(int.Parse(v3), 255));
         }
 
         internal void DrawShape(byte[] b, string xx, string yy, string height, string width)
@@ -204,24 +230,6 @@ namespace ImageTyper
                 b[i + 1] = Kolor.G;
                 b[i + 2] = Kolor.B;
                 locX++;
-            }
-        }
-
-        internal static class MathExtended
-        {
-            public static int Clamp(int value, int maxValue)
-            {
-                if (value > maxValue)
-                    return maxValue;
-                else return value;
-            }
-            public static int ClampUnsigned(int value, int maxValue)
-            {
-                if (value <= 0)
-                    return 0;
-                if (value > maxValue)
-                    return maxValue;
-                else return value;
             }
         }
 
