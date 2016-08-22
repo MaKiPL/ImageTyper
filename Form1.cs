@@ -127,14 +127,47 @@ namespace ImageTyper
                 GenerateNoise(b,parameters[0], parameters[1]);
                 return;
             }
-            if (com[0] == "e" || com[0] == "ex" && parameters.Length == 1)
+            if (com[0] == "GeneratePhotoNoise" || com[0] == "PhotoNoise" && parameters.Length == 1)
             {
-                TestEffect(b, parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5]);
+                RealImageNoise(b, parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5]);
                 return;
             }
         }
 
-        private void TestEffect(byte[] b, string v1, string v2, string v3, string v4, string v5, string v6)
+        private void RealImageNoise(byte[] b, string v1, string v2, string v3, string v4, string v5, string v6)
+        {
+            int pass = int.Parse(v6);
+            if (pass > 3)
+                pass = 3;
+            if (pass < 0)
+                pass = 1;
+            int x = int.Parse(v1) & 511;
+            int y = int.Parse(v2) & 511;
+            int h = Math.Abs(MathExtended.Clamp(int.Parse(v3), 511 - y));
+            int w = Math.Abs(MathExtended.Clamp(int.Parse(v4), 511 - x));
+            int start = GetPixelLocation(x, y);
+            int end = GetPixelLocation(x + w, y + h);
+            int locY = 0, locX = 0;
+            int tolerance = int.Parse(v5);
+            for (int i = start; i < end; i += 3)
+            {
+                if (locX >= w)
+                {
+                    locY++;
+                    i = GetPixelLocation(x, y + locY);
+                    locX = 0;
+                }
+                if(pass == 3 || pass == 1)
+                    b[i] = (byte)MathExtended.ClampUnsigned(_rand.Next(b[i] - tolerance, b[i] + tolerance),255);
+                if(pass == 2 || pass == 1)
+                    b[i+1] = (byte)MathExtended.ClampUnsigned(_rand.Next(b[i+1] - tolerance, b[i+1] + tolerance), 255);
+                if (pass == 1)
+                    b[i+2] = (byte)MathExtended.ClampUnsigned(_rand.Next(b[i+2] - tolerance, b[i+2] + tolerance), 255);
+                locX++;
+            }
+        }
+
+        private void unusedEffect(byte[] b, string v1, string v2, string v3, string v4, string v5, string v6)
         {
             int pass = int.Parse(v6);
             if (pass > 3)
@@ -158,11 +191,11 @@ namespace ImageTyper
                     i = GetPixelLocation(x, y + locY);
                     locX = 0;
                 }
-                if(pass == 3)
-                    b[i] = (byte)MathExtended.ClampUnsigned(_rand.Next(buffer - tolerance, buffer + tolerance),255);
-                if(pass == 2 || pass == 1)
+                if (pass == 3)
+                    b[i] = (byte)MathExtended.ClampUnsigned(_rand.Next(buffer - tolerance, buffer + tolerance), 255);
+                if (pass == 2 || pass == 1)
                     b[i + 1] = (byte)MathExtended.ClampUnsigned(_rand.Next(buffer - tolerance, buffer + tolerance), 255);
-                if(pass == 1)
+                if (pass == 1)
                     b[i + 2] = (byte)MathExtended.ClampUnsigned(_rand.Next(buffer - tolerance, buffer + tolerance), 255);
                 locX++;
             }
